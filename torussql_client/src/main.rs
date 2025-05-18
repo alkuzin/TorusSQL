@@ -16,8 +16,11 @@
 
 //! TorusSQL client entry point.
 
-pub(crate) use torussql_sdk::log;
+mod client;
+mod meta;
+
+use torussql_sdk::log;
 
 fn main() {
-    log::info!("Running TorusSQL client");
+    client::run();
 }
