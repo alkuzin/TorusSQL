@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! TorusSQL client entry point.
+//! TorusSQL Software Development Kit (SDK) main module.
 
-pub(crate) use torussql_sdk::log;
-
-fn main() {
-    log::info!("Running TorusSQL client");
-}
+pub mod log;

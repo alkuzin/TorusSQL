@@ -16,13 +16,16 @@
 
 # Project package info section.
 [package]
-name    = "torussql_client"
+name    = "torussql_sdk"
 version = "0.0.0"
 edition = "2024"
 authors = ["Alexander (GitHub: @alkuzin)"]
 
+# Settings for the library part of the project.
+[lib]
+# Crate should be built as a standard library.
+crate-type = ["lib"]
+
 # Project dependencies section.
 [dependencies]
-# TorusSQL SDK crate.
-torussql_sdk = { path = "../torussql_sdk" }
 chrono = "0.4.41"
