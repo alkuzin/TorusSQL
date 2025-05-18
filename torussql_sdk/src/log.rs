@@ -43,6 +43,7 @@ macro_rules! info {
 #[macro_export]
 macro_rules! debug {
     ($($arg:tt)*) => {{
+        #[cfg(debug_assertions)]
         crate::log::custom!("DEBUG", $($arg)*)
     }};
 }
