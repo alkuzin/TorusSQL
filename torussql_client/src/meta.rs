@@ -16,7 +16,6 @@
 
 //! TorusSQL meta-commands related declarations module.
 
-use std::process::{self, Command};
 use crate::log;
 
 /// Builtin meta-command info struct.
@@ -26,11 +25,11 @@ struct MetaCommand {
     /// Command purpose description.
     description: &'static str,
     /// Command function handler.
-    handler: fn() -> (),
+    handler: fn(&Vec<&str>) -> (),
 }
 
 /// Array of builtin meta-commands.
-static COMMANDS: [MetaCommand;3] = [
+static COMMANDS: [MetaCommand;4] = [
     MetaCommand {
         name: "help",
         description: "Display list of available meta-commands",
@@ -45,6 +44,11 @@ static COMMANDS: [MetaCommand;3] = [
         name: "version",
         description: "Display TorusSQL version and additional info",
         handler: version,
+    },
+    MetaCommand {
+        name: "exec",
+        description: "Execute SQL from file specified file",
+        handler: exec,
     },
 ];
 
@@ -67,54 +71,57 @@ pub fn is_command(input: &String) -> bool {
 /// - `input` - given user command.
 pub fn handle_command(input: &String) {
     // Extract command & remove extra whitespaces.
-    let input = (&input[1..]).trim();
+    let input: Vec<_> = (&input[1..]).trim().split(" ").collect();
+    let command_name = input[0];
+
+    log::debug!("Handle command: {:?}", input);
 
     // Try to find command in commands array.
     for command in &COMMANDS {
-        if command.name == input {
-            (command.handler)();
+        if command.name == command_name {
+            (command.handler)(&input);
             return;
         }
     }
 
     // Handle unknown command.
     // TODO: replace with Result<>.
-    log::debug!("Unknown meta-command: '{input}'");
+    log::debug!("Unknown meta-command: '{command_name}'");
 }
 
 /// Display list of available meta-commands.
-pub fn help() {
+pub fn help(_: &Vec<&str>) {
     for command in &COMMANDS {
         println!(":{:<10} {}", command.name, command.description);
     }
 }
 
 /// Exit TorusSQL client.
-pub fn exit() {
+pub fn exit(_: &Vec<&str>) {
     log::debug!("Exiting TorusSQL client");
-    process::exit(0);
-}
-
-/// Get rustc compiler version info.
-///
-/// # Returns
-/// - String representation of rustc version.
-fn get_rustc_version() -> String {
-    // Execute the rustc --version command.
-    let output = Command::new("rustc")
-        .arg("--version")
-        .output()
-        .expect("Failed to execute rustc");
-
-    // Convert the output to a String.
-    String::from_utf8_lossy(&output.stdout).trim().to_string()
+    std::process::exit(0);
 }
 
 /// Display TorusSQL version and additional info.
-pub fn version() {
+pub fn version(_: &Vec<&str>) {
     let version = env!("CARGO_PKG_VERSION");
     let authors = env!("CARGO_PKG_AUTHORS");
-    let rustc_version = get_rustc_version();
 
-    println!("TorusSQL v{version}\n{rustc_version}\nAuthors: {authors}");
+    println!("TorusSQL v{version}\nAuthors: {authors}");
+}
+
+/// Execute SQL from file specified file.
+pub fn exec(args: &Vec<&str>) {
+    if args.len() != 2 {
+        log::error!("Incorrect number of arguments");
+        // TODO: print error for user.
+        // TODO: print usage example for user.
+        // TODO: add usage example for MetaCommand.
+        return;
+    }
+
+    // TODO: check whether given path is correct.
+    let path = args[1];
+
+    log::debug!("File: '{path}'");
 }
