@@ -16,7 +16,8 @@
 
 //! TorusSQL client related declarations.
 
-use std::io::{stdout, Write};
+use libc::{tcgetattr, tcsetattr, termios, ECHO, ICANON, STDIN_FILENO, TCSANOW};
+use std::io::{stdin, stdout, Read, Write};
 use crate::{log, meta};
 
 /// TorusSQL client shell prompt.
@@ -24,46 +25,162 @@ const PROMPT: &str = "torussql> ";
 
 /// Run client.
 pub fn run() {
+    let old_terminal = terminal_set_raw_mode();
+
     println!("TorusSQL v{}", env!("CARGO_PKG_VERSION"));
     println!("Print ':help' to see list of available commands.");
 
-    let mut input = String::new();
+    // TODO: declare commands here & pass it to read_input() as argument.
+
+    let _ = std::panic::catch_unwind(|| {
+        read_input();
+    });
+
+    // TODO: save commands history to file before exit.
+
+    reset_terminal(old_terminal);
+}
+
+/// Read and handle user input.
+fn read_input() {
+    // TODO: fix issue with: readline: warning: turning off output flushing.
+    // TODO: description comments.
+    let mut buffer = [0; 1];
+    let mut input  = String::new();
+
+    print!("{PROMPT}");
+    stdout().flush().unwrap();
 
     loop {
-        print!("{}", PROMPT);
+        let _ = stdin().read_exact(&mut buffer);
+        stdout().flush().unwrap();
 
-        if let Err(e) = stdout().flush() {
-            log::error!("Error to flush stdout: {e}");
-            break;
+        // TODO: rename magic numbers with enum: ESC=27.
+        if buffer[0] == 27 {
+            let _ = stdin().read_exact(&mut buffer);
+
+            if buffer[0] == 91 {
+                let _ = stdin().read_exact(&mut buffer);
+
+                match buffer[0] {
+                    // Up arrow.
+                    65 => {
+                        // TODO: retrieve last command from history.
+                        log::debug!("UP ARROW");
+                    }
+                    // Down arrow.
+                    66 => {
+                        // TODO: retrieve next command from history.
+                        log::debug!("DOWN ARROW");
+                    }
+                    _ => {}
+                }
+            }
         }
-
-        // Read and handle user input.
-        match std::io::stdin().read_line(&mut input) {
-            Ok(_) => {
-                // Remove extra whitespaces.
-                input = input.trim().to_string();
-
-                // Skip if input is empty.
-                if input.is_empty() {
-                    continue;
-                }
-
-                // Check whether input is meta-command or SQL query.
-                if meta::is_command(&input) {
-                    // TODO: add autocomplete for meta-commands.
-                    // TODO: add meta-commands history.
-                    meta::handle_command(&input);
-                }
-                else {
-                    // TODO: check whether it is correct query or not.
-                    log::debug!("Entered: '{input}'");
-                }
-
-                input.clear();
+        else if buffer[0] == 127 {
+            if !input.is_empty() {
+                input.pop();
+                print!("\r{PROMPT}{}", input);
+                print!(" ");
+                print!("\r{PROMPT}{}", input);
             }
-            Err(e) => {
-                log::error!("Error to read input: {e}");
+            stdout().flush().unwrap();
+        }
+        else if buffer[0] == 9 {
+            // Remove extra whitespaces.
+            input = input.trim().to_string();
+
+            if meta::is_command(&input) {
+                let suggestions = meta::find_closest_commands(&input);
+
+                match suggestions.len() {
+                    0 => continue,
+                    1 => {
+                        print!("\r{PROMPT}");
+
+                        for _ in 0..input.len() {
+                            print!(" ");
+                        }
+
+                        input.clear();
+                        input = format!(":{}", suggestions[0].clone());
+
+                        print!("\r{PROMPT}{input}");
+                        stdout().flush().unwrap();
+                    },
+                    _ => {
+                        print!("\n");
+
+                        for i in suggestions {
+                            print!("{i}\t");
+                        }
+
+                        print!("\n{PROMPT}{input}");
+                        stdout().flush().unwrap();
+                    },
+                }
             }
+        }
+        else if buffer[0] == 13 {
+            print!("\n");
+
+            // Remove extra whitespaces.
+            input = input.trim().to_string();
+
+            // Skip if input is empty.
+            if input.is_empty() {
+                continue;
+            }
+
+            // Check whether input is meta-command or SQL query.
+            if meta::is_command(&input) {
+                // TODO: add meta-commands history.
+                meta::handle_command(&input);
+            }
+            else {
+                // TODO: check whether it is correct query or not.
+                log::debug!("Entered: '{input}'");
+            }
+
+            print!("{PROMPT}");
+            stdout().flush().unwrap();
+            input.clear();
+        }
+        else {
+            let symbol = buffer[0] as char;
+            print!("{symbol}");
+            input.push(symbol);
+
+            stdout().flush().unwrap();
         }
     }
+}
+
+/// Set raw mode of terminal.
+///
+/// # Returns
+/// - Terminal attributes before setting raw mode.
+fn terminal_set_raw_mode() -> termios {
+    unsafe {
+        // Get current terminal attributes.
+        let mut terminal: termios = std::mem::zeroed();
+        tcgetattr(STDIN_FILENO, &mut terminal);
+
+        // Save old terminal attributes in order to restore it later.
+        let old_terminal = terminal.clone();
+
+        // Disable echo and canonical mode.
+        terminal.c_lflag = !(ECHO | ICANON);
+        tcsetattr(STDIN_FILENO, TCSANOW, &terminal);
+
+        old_terminal
+    }
+}
+
+/// Set terminal to canonical mode.
+///
+/// # Parameter
+/// - `terminal` - given canonical mode terminal attributes.
+fn reset_terminal(terminal: termios) {
+    unsafe { tcsetattr(0, TCSANOW, &terminal) };
 }

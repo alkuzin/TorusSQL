@@ -14,7 +14,7 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "819e7219dbd41043ac279b19830f2efc897156490d7fd6ea916720117ee66311"
 dependencies = [
- "libc",
+ "libc 0.2.172",
 ]
 
 [[package]]
@@ -105,6 +105,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
 
 [[package]]
+name = "libc"
+version = "1.0.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7222002e5385b4d9327755661e3847c970e8fbf9dea6da8c57f16e8cfbff53a8"
+
+[[package]]
 name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -171,6 +177,7 @@ name = "torussql_client"
 version = "0.0.0"
 dependencies = [
  "chrono",
+ "libc 1.0.0-alpha.1",
  "torussql_sdk",
 ]
 
