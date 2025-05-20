@@ -65,6 +65,9 @@ pub fn is_command(input: &String) -> bool {
     input.starts_with(":")
 }
 
+// TODO: return signal/enum to client::read_input()
+// in order to reset terminal attributes before exiting program.
+
 /// Handle meta-command.
 ///
 /// # Parameters
@@ -85,8 +88,24 @@ pub fn handle_command(input: &String) {
     }
 
     // Handle unknown command.
-    // TODO: replace with Result<>.
+    // TODO: replace with Result<> or custom error enum.
     log::debug!("Unknown meta-command: '{command_name}'");
+}
+
+/// Function to find the closest commands based on current input.
+///
+/// # Parameters
+/// - `input` - given user input to handle.
+///
+/// # Returns
+/// - Vector of closest commands suggestions.
+pub fn find_closest_commands(input: &str) -> Vec<String> {
+    let input = input.trim();
+
+    COMMANDS.iter()
+        .filter(|command| command.name.starts_with(&input[1..]))
+        .map(|command| command.name.to_string())
+        .collect()
 }
 
 /// Display list of available meta-commands.
@@ -121,7 +140,7 @@ pub fn exec(args: &Vec<&str>) {
     }
 
     // TODO: check whether given path is correct.
-    let path = args[1];
+    let _path = args[1];
 
-    log::debug!("File: '{path}'");
+    log::debug!("File: '{_path}'");
 }
