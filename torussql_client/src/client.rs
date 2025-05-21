@@ -68,7 +68,6 @@ impl Client {
 
     /// Read and handle user input.
     pub fn read_input(&mut self) {
-        // TODO: fix issue with: readline: warning: turning off output flushing.
         // Read commands history from file.
         if let Err(e) = self.load_history() {
             log::error!("Error: {e}");
@@ -93,7 +92,11 @@ impl Client {
                 self.handle_tab();
             }
             else if self.buffer[0] == key::ENTER {
-                self.handle_enter();
+                let to_break = self.handle_enter();
+
+                if to_break {
+                    break;
+                }
             }
             else if is_ctrl(self.buffer[0] as i32) {
                 let to_break = self.handle_ctrl(self.buffer[0]);
@@ -176,7 +179,6 @@ impl Client {
 
         Ok(())
     }
-
 
     /// Handle arrow keys.
     fn handle_arrow_keys(&mut self) {
@@ -319,7 +321,11 @@ impl Client {
     }
 
     /// Handle enter key.
-    fn handle_enter(&mut self) {
+    ///
+    /// # Returns
+    /// - `true`  - if client process should be terminated.
+    /// - `false` - otherwise.
+    fn handle_enter(&mut self) -> bool {
         print!("\n");
 
         // Remove extra whitespaces.
@@ -331,13 +337,17 @@ impl Client {
             print!("{PROMPT}");
             stdout().flush().unwrap();
             input.clear();
-            return;
+            return false;
         }
 
         // Check whether input is meta-command or SQL query.
         if meta::is_command(&input) {
             self.history.push(input.to_string());
-            meta::handle_command(&input);
+            let to_break = meta::handle_command(&input);
+
+            if to_break {
+                return true;
+            }
         }
         else {
             self.history.push(input.to_string());
@@ -349,6 +359,8 @@ impl Client {
         print!("{PROMPT}");
         stdout().flush().unwrap();
         input.clear();
+
+        false
     }
 
     /// Handle CTRL+KEY/CTRL+SHIFT+KEY keys.

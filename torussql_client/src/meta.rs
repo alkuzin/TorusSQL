@@ -25,7 +25,7 @@ struct MetaCommand {
     /// Command purpose description.
     description: &'static str,
     /// Command function handler.
-    handler: fn(&Vec<&str>) -> (),
+    handler: fn(&Vec<&str>) -> bool,
 }
 
 /// Array of builtin meta-commands.
@@ -65,14 +65,15 @@ pub fn is_command(input: &String) -> bool {
     input.starts_with(":")
 }
 
-// TODO: return signal/enum to client::read_input()
-// in order to reset terminal attributes before exiting program.
-
 /// Handle meta-command.
 ///
 /// # Parameters
 /// - `input` - given user command.
-pub fn handle_command(input: &String) {
+///
+/// # Returns
+/// - `true`  - if client process should be terminated.
+/// - `false` - otherwise.
+pub fn handle_command(input: &String) -> bool {
     // Extract command & remove extra whitespaces.
     let input: Vec<_> = (&input[1..]).trim().split(" ").collect();
     let command_name = input[0];
@@ -82,14 +83,14 @@ pub fn handle_command(input: &String) {
     // Try to find command in commands array.
     for command in &COMMANDS {
         if command.name == command_name {
-            (command.handler)(&input);
-            return;
+            return (command.handler)(&input);
         }
     }
 
     // Handle unknown command.
     // TODO: replace with Result<> or custom error enum.
     log::debug!("Unknown meta-command: '{command_name}'");
+    false
 }
 
 /// Function to find the closest commands based on current input.
@@ -109,38 +110,46 @@ pub fn find_closest_commands(input: &str) -> Vec<String> {
 }
 
 /// Display list of available meta-commands.
-pub fn help(_: &Vec<&str>) {
+pub fn help(_: &Vec<&str>) -> bool {
     for command in &COMMANDS {
         println!(":{:<10} {}", command.name, command.description);
     }
+
+    false
 }
 
 /// Exit TorusSQL client.
-pub fn exit(_: &Vec<&str>) {
+///
+/// # Returns
+/// - `true`  - if client process should be terminated.
+/// - `false` - otherwise.
+pub fn exit(_: &Vec<&str>) -> bool {
     log::debug!("Exiting TorusSQL client");
-    std::process::exit(0);
+    true
 }
 
 /// Display TorusSQL version and additional info.
-pub fn version(_: &Vec<&str>) {
+pub fn version(_: &Vec<&str>) -> bool {
     let version = env!("CARGO_PKG_VERSION");
     let authors = env!("CARGO_PKG_AUTHORS");
 
     println!("TorusSQL v{version}\nAuthors: {authors}");
+    false
 }
 
 /// Execute SQL from file specified file.
-pub fn exec(args: &Vec<&str>) {
+pub fn exec(args: &Vec<&str>) -> bool {
     if args.len() != 2 {
         log::error!("Incorrect number of arguments");
         // TODO: print error for user.
         // TODO: print usage example for user.
         // TODO: add usage example for MetaCommand.
-        return;
+        return false;
     }
 
     // TODO: check whether given path is correct.
     let _path = args[1];
 
     log::debug!("File: '{_path}'");
+    false
 }
