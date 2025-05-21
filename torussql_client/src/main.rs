@@ -16,6 +16,7 @@
 
 //! TorusSQL client entry point.
 
+mod terminal;
 mod client;
 mod meta;
 
