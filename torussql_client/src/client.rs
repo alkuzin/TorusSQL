@@ -41,35 +41,74 @@ pub fn run() {
     reset_terminal(old_terminal);
 }
 
+// TODO: move terminal-related code to other module.
+
+const TAB_SIZE: usize = 4;
+
+#[repr(u8)]
+enum Key {
+    Unknown   = 0,
+    Esc       = 27,
+    Csi       = 91,
+    UpArrow   = 65,
+    DownArrow = 66,
+    Backspace = 127,
+    Enter     = 13,
+    Tab       = 9,
+}
+
+impl From<u8> for Key {
+    fn from(value: u8) -> Self {
+        match value {
+            27  => Key::Esc,
+            91  => Key::Csi,
+            65  => Key::UpArrow,
+            66  => Key::DownArrow,
+            127 => Key::Backspace,
+            9   => Key::Tab,
+            13  => Key::Enter,
+            _   => Key::Unknown,
+        }
+    }
+}
+
 /// Read and handle user input.
 fn read_input() {
     // TODO: fix issue with: readline: warning: turning off output flushing.
     // TODO: description comments.
+    // TODO: move key handlers to separate functions.
     let mut buffer = [0; 1];
     let mut input  = String::new();
 
     print!("{PROMPT}");
     stdout().flush().unwrap();
 
+    const ESC: u8 = Key::Esc as u8;
+    const CSI: u8 = Key::Csi as u8;
+    const UP_ARROW: u8 = Key::UpArrow as u8;
+    const DOWN_ARROW: u8 = Key::DownArrow as u8;
+    const BACKSPACE: u8 = Key::Backspace as u8;
+    const ENTER: u8 = Key::Enter as u8;
+    const TAB: u8 = Key::Tab as u8;
+
     loop {
+        // Read symbol from keyboard.
         let _ = stdin().read_exact(&mut buffer);
         stdout().flush().unwrap();
 
-        // TODO: rename magic numbers with enum: ESC=27.
-        if buffer[0] == 27 {
+        if buffer[0] == ESC {
             let _ = stdin().read_exact(&mut buffer);
 
-            if buffer[0] == 91 {
+            // Check whether it is arrow keys.
+            if buffer[0] == CSI {
                 let _ = stdin().read_exact(&mut buffer);
 
                 match buffer[0] {
-                    // Up arrow.
-                    65 => {
+                    UP_ARROW => {
                         // TODO: retrieve last command from history.
                         log::debug!("UP ARROW");
                     }
-                    // Down arrow.
-                    66 => {
+                    DOWN_ARROW => {
                         // TODO: retrieve next command from history.
                         log::debug!("DOWN ARROW");
                     }
@@ -77,7 +116,8 @@ fn read_input() {
                 }
             }
         }
-        else if buffer[0] == 127 {
+        else if buffer[0] == BACKSPACE {
+            // Handle clearing symbols.
             if !input.is_empty() {
                 input.pop();
                 print!("\r{PROMPT}{}", input);
@@ -86,10 +126,11 @@ fn read_input() {
             }
             stdout().flush().unwrap();
         }
-        else if buffer[0] == 9 {
+        else if buffer[0] == TAB {
             // Remove extra whitespaces.
             input = input.trim().to_string();
 
+            // Autocomplete meta-command.
             if meta::is_command(&input) {
                 let suggestions = meta::find_closest_commands(&input);
 
@@ -120,8 +161,15 @@ fn read_input() {
                     },
                 }
             }
+            else {
+                // Add tab after input.
+                for _ in 0..TAB_SIZE {
+                    input.push(' ');
+                    print!(" ");
+                }
+            }
         }
-        else if buffer[0] == 13 {
+        else if buffer[0] == ENTER {
             print!("\n");
 
             // Remove extra whitespaces.
@@ -146,7 +194,21 @@ fn read_input() {
             stdout().flush().unwrap();
             input.clear();
         }
+        else if is_ctrl(buffer[0] as i32) {
+            // Handle CTRL + <KEY> / CTRL + SHIFT + <KEY>.
+            let symbol = (buffer[0] + 'A' as u8 - 1) as char;
+
+            match symbol {
+                // Exit program.
+                'C' => {
+                    print!("\n");
+                    break;
+                },
+                _ => {},
+            }
+        }
         else {
+            // Display symbol on the screen & add it to the input buffer.
             let symbol = buffer[0] as char;
             print!("{symbol}");
             input.push(symbol);
@@ -154,6 +216,19 @@ fn read_input() {
             stdout().flush().unwrap();
         }
     }
+}
+
+/// Check whether given symbol is CTRL/CTRL+SHIFT.
+///
+/// # Parameters
+/// - `symbol` - given symbol code to check.
+///
+/// # Returns
+/// - `true`  - if given symbol is CTRL/CTRL+SHIFT.
+/// - `false` - otherwise.
+#[inline(always)]
+fn is_ctrl(symbol: i32) -> bool {
+    symbol >= 1 && symbol <= 26
 }
 
 /// Set raw mode of terminal.
