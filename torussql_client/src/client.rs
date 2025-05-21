@@ -42,7 +42,6 @@ pub fn run() {
 /// Read and handle user input.
 fn read_input() {
     // TODO: fix issue with: readline: warning: turning off output flushing.
-    // TODO: move key handlers to separate functions.
     let mut buffer = [0; 1];        // Buffer to store symbol from keyboard.
     let mut input  = String::new(); // User input buffer.
 
@@ -55,114 +54,22 @@ fn read_input() {
         stdout().flush().unwrap();
 
         if buffer[0] == key::ESC {
-            let _ = stdin().read_exact(&mut buffer);
-
-            // Check whether it is arrow keys.
-            if buffer[0] == key::CSI {
-                let _ = stdin().read_exact(&mut buffer);
-
-                match buffer[0] {
-                    key::UP_ARROW => {
-                        // TODO: retrieve last command from history.
-                        log::debug!("UP ARROW");
-                    }
-                    key::DOWN_ARROW => {
-                        // TODO: retrieve next command from history.
-                        log::debug!("DOWN ARROW");
-                    }
-                    _ => {}
-                }
-            }
+            handle_arrow_keys(&mut buffer);
         }
         else if buffer[0] == key::BACKSPACE {
-            // Handle clearing symbols.
-            if !input.is_empty() {
-                input.pop();
-                print!("\r{PROMPT}{}", input);
-                print!(" ");
-                print!("\r{PROMPT}{}", input);
-            }
-            stdout().flush().unwrap();
+            handle_backspace(&mut input);
         }
         else if buffer[0] == key::TAB {
-            // Remove extra whitespaces.
-            input = input.trim().to_string();
-
-            // Autocomplete meta-command.
-            if meta::is_command(&input) {
-                let suggestions = meta::find_closest_commands(&input);
-
-                match suggestions.len() {
-                    0 => continue,
-                    1 => {
-                        print!("\r{PROMPT}");
-
-                        for _ in 0..input.len() {
-                            print!(" ");
-                        }
-
-                        input.clear();
-                        input = format!(":{}", suggestions[0].clone());
-
-                        print!("\r{PROMPT}{input}");
-                        stdout().flush().unwrap();
-                    },
-                    _ => {
-                        print!("\n");
-
-                        for i in suggestions {
-                            print!("{i}\t");
-                        }
-
-                        print!("\n{PROMPT}{input}");
-                        stdout().flush().unwrap();
-                    },
-                }
-            }
-            else {
-                // Add tab after input.
-                for _ in 0..TAB_SIZE {
-                    input.push(' ');
-                    print!(" ");
-                }
-            }
+            handle_tab(&mut input);
         }
         else if buffer[0] == key::ENTER {
-            print!("\n");
-
-            // Remove extra whitespaces.
-            input = input.trim().to_string();
-
-            // Skip if input is empty.
-            if input.is_empty() {
-                continue;
-            }
-
-            // Check whether input is meta-command or SQL query.
-            if meta::is_command(&input) {
-                // TODO: add meta-commands history.
-                meta::handle_command(&input);
-            }
-            else {
-                // TODO: check whether it is correct query or not.
-                log::debug!("Entered: '{input}'");
-            }
-
-            print!("{PROMPT}");
-            stdout().flush().unwrap();
-            input.clear();
+            handle_enter(&mut input);
         }
         else if is_ctrl(buffer[0] as i32) {
-            // Handle CTRL + <KEY> / CTRL + SHIFT + <KEY>.
-            let symbol = (buffer[0] + 'A' as u8 - 1) as char;
+            let to_break = handle_ctrl(buffer[0]);
 
-            match symbol {
-                // Exit program.
-                'C' => {
-                    print!("\n");
-                    break;
-                },
-                _ => {},
+            if to_break {
+                break;
             }
         }
         else {
@@ -173,5 +80,148 @@ fn read_input() {
 
             stdout().flush().unwrap();
         }
+    }
+}
+
+/// Handle arrow keys.
+///
+/// # Parameters
+/// - `buffer` - given keyboard key buffer.
+fn handle_arrow_keys(buffer: &mut [u8]) {
+    let _ = stdin().read_exact(buffer);
+
+    // Check whether it is arrow keys.
+    if buffer[0] == key::CSI {
+        let _ = stdin().read_exact(buffer);
+
+        match buffer[0] {
+            key::UP_ARROW => {
+                // TODO: retrieve last command from history.
+                log::debug!("UP ARROW");
+            }
+            key::DOWN_ARROW => {
+                // TODO: retrieve next command from history.
+                log::debug!("DOWN ARROW");
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Handle backspace key.
+///
+/// # Parameters
+/// - `input` - given user input buffer.
+fn handle_backspace(input: &mut String) {
+    // Handle clearing symbols.
+    if !input.is_empty() {
+        input.pop();
+        print!("\r{PROMPT}{}", input);
+        print!(" ");
+        print!("\r{PROMPT}{}", input);
+    }
+    stdout().flush().unwrap();
+}
+
+/// Handle tab key.
+///
+/// # Parameters
+/// - `input` - given user input buffer.
+fn handle_tab(input: &mut String) {
+    // Remove extra whitespaces.
+    *input = input.trim().to_string();
+
+    // Autocomplete meta-command.
+    if meta::is_command(&input) {
+        let suggestions = meta::find_closest_commands(&input);
+
+        match suggestions.len() {
+            0 => return,
+            1 => {
+                print!("\r{PROMPT}");
+
+                for _ in 0..input.len() {
+                    print!(" ");
+                }
+
+                input.clear();
+                *input = format!(":{}", suggestions[0].clone());
+
+                print!("\r{PROMPT}{input}");
+                stdout().flush().unwrap();
+            },
+            _ => {
+                print!("\n");
+
+                for i in suggestions {
+                    print!("{i}\t");
+                }
+
+                print!("\n{PROMPT}{input}");
+                stdout().flush().unwrap();
+            },
+        }
+    }
+    else {
+        // Add tab after input.
+        for _ in 0..TAB_SIZE {
+            input.push(' ');
+            print!(" ");
+        }
+    }
+}
+
+/// Handle enter key.
+///
+/// # Parameters
+/// - `input` - given user input buffer.
+fn handle_enter(input: &mut String) {
+    print!("\n");
+
+    // Remove extra whitespaces.
+    *input = input.trim().to_string();
+
+    // Skip if input is empty.
+    if input.is_empty() {
+        print!("{PROMPT}");
+        stdout().flush().unwrap();
+        input.clear();
+        return;
+    }
+
+    // Check whether input is meta-command or SQL query.
+    if meta::is_command(&input) {
+        // TODO: add meta-commands history.
+        meta::handle_command(&input);
+    }
+    else {
+        // TODO: check whether it is correct query or not.
+        log::debug!("Entered: '{input}'");
+    }
+
+    print!("{PROMPT}");
+    stdout().flush().unwrap();
+    input.clear();
+}
+
+/// Handle CTRL+KEY/CTRL+SHIFT+KEY keys.
+///
+/// # Parameters
+/// - `symbol` - given keyboard symbol.
+///
+/// # Returns
+/// - `true`  - flag signaling to exit the program.
+/// - `false` - flag signaling to not exit the program.
+fn handle_ctrl(symbol: u8) -> bool {
+    // Handle CTRL + <KEY> / CTRL + SHIFT + <KEY>.
+    let symbol = (symbol + 'A' as u8 - 1) as char;
+
+    match symbol {
+        // Exit program.
+        'C' => {
+            print!("\n");
+            true
+        },
+        _ => false,
     }
 }
