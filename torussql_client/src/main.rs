@@ -23,5 +23,7 @@ mod meta;
 use torussql_sdk::log;
 
 fn main() {
+    // TODO: setup special files & directories.
+    // In case of errors stop program.
     client::run();
 }

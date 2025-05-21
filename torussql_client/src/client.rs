@@ -17,16 +17,30 @@
 //! TorusSQL client related declarations.
 
 use crate::{log, meta, terminal::{key, TAB_SIZE, is_ctrl, reset_terminal, set_raw_mode}};
-use std::io::{stdin, stdout, Read, Write};
+use std::{io::{self, stdin, stdout, BufRead, BufReader, Read, Write}, fs::OpenOptions};
+
+// TODO: move consts into config module.
+// TODO: add meta-command to change history limit & store all configs in config file.
 
 /// TorusSQL client shell prompt.
 const PROMPT: &str = "torussql> ";
 
+/// User input size limit.
 const INPUT_LIMIT: usize = 64;
+
+/// User input history size limit.
 const HISTORY_LIMIT: usize = 64;
 
+/// Max number of characters per line.
 const LINE_SIZE: usize = INPUT_LIMIT + PROMPT.len();
 
+/// Special files directory path.
+const DIRECTORY_PATH: &'static str = ".torussql";
+
+/// User input history file path.
+const HISTORY_PATH: &'static str = ".torussql/history";
+
+/// Struct for handling client CLI.
 pub struct Client {
     /// Buffer to store symbol from keyboard.
     buffer: [u8; 1],
@@ -39,6 +53,10 @@ pub struct Client {
 }
 
 impl Client {
+    /// Construct new `Client` object.
+    ///
+    /// # Returns
+    /// - New `Client` object.
     pub fn new() -> Self {
         let buffer      = [0; 1];
         let input       = String::with_capacity(INPUT_LIMIT);
@@ -51,7 +69,11 @@ impl Client {
     /// Read and handle user input.
     pub fn read_input(&mut self) {
         // TODO: fix issue with: readline: warning: turning off output flushing.
-        // TODO: read commands history from file.
+        // Read commands history from file.
+        if let Err(e) = self.load_history() {
+            log::error!("Error: {e}");
+            return;
+        }
 
         print!("{PROMPT}");
         stdout().flush().unwrap();
@@ -90,10 +112,71 @@ impl Client {
             }
         }
 
-        // TODO: save history. Add history limit after exceeding which oldest commands removed.
-        // TODO: add meta-command to change history limit & store all configs in config file.
-        log::debug!("{:?}",self.history);
+        // Save commands history to file.
+        if let Err(e) = self.save_history() {
+            log::error!("Error: {e}");
+        }
     }
+
+    /// Load commands history from file.
+    ///
+    /// # Returns
+    /// - `Ok`  - in case of success.
+    /// - `Err` - otherwise.
+    fn load_history(&mut self) -> io::Result<()> {
+        // Create directory if it not exists.
+        std::fs::create_dir_all(DIRECTORY_PATH)?;
+
+        // Create the file if it does not exist.
+        let file = OpenOptions::new()
+            .create(true)           // Create the file if it doesn't exist.
+            .write(true)            // Allow writing to the file.
+            .read(true)             // Allow reading from the file.
+            .open(HISTORY_PATH)?;
+
+        // Check if the file is empty.
+        let metadata = file.metadata()?;
+
+        if metadata.len() == 0 {
+            return Ok(());
+        }
+
+        // If the file exists and is not empty, read all commands.
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let command = line?;
+            self.history.push(command);
+        }
+
+        self.history_pos = self.history.len();
+        Ok(())
+    }
+
+    /// Save commands history to file.
+    ///
+    /// # Returns
+    /// - `Ok`  - in case of success.
+    /// - `Err` - otherwise.
+    fn save_history(&mut self) -> io::Result<()> {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(HISTORY_PATH)?;
+
+        // Trim the history if it exceeds the limit.
+        while self.history.len() > HISTORY_LIMIT {
+            self.history.remove(0);
+        }
+
+        // Write commands to the file.
+        for command in &self.history {
+            writeln!(file, "{}", command)?;
+        }
+
+        Ok(())
+    }
+
 
     /// Handle arrow keys.
     fn handle_arrow_keys(&mut self) {
@@ -103,6 +186,7 @@ impl Client {
         if self.buffer[0] == key::CSI {
             let _ = stdin().read_exact(&mut self.buffer);
 
+            // TODO: handle left and right arrow keys.
             match self.buffer[0] {
                 key::UP_ARROW   => self.handle_up_arrow(),
                 key::DOWN_ARROW => self.handle_down_arrow(),
@@ -258,7 +342,6 @@ impl Client {
         else {
             self.history.push(input.to_string());
             // TODO: check whether it is correct query or not.
-            // log::debug!("Entered: '{input}'");
         }
 
         self.history_pos = self.history.len();
@@ -277,7 +360,6 @@ impl Client {
     /// - `true`  - flag signaling to exit the program.
     /// - `false` - flag signaling to not exit the program.
     fn handle_ctrl(&self, symbol: u8) -> bool {
-        // Handle CTRL + <KEY> / CTRL + SHIFT + <KEY>.
         let symbol = (symbol + 'A' as u8 - 1) as char;
 
         match symbol {
