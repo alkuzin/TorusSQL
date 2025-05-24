@@ -14,12 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! TorusSQL server entry point.
+//! SQL execution engine main module.
 
-pub mod sql;
-
-use torussql_sdk::log;
-
-fn main() {
-    log::info!("Running TorusSQL server");
-}
+pub mod lexer;
