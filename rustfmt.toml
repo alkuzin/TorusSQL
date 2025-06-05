@@ -1,0 +1,20 @@
+# Project name: TorusSQL.
+# Description: Relational database management system.
+# Licence: GPL-3.0.
+# Author: Alexander (@alkuzin).
+
+# Specifies the Rust edition for formatting.
+style_edition="2024"
+
+# Sets the newline style to Unix-style (LF).
+newline_style = "Unix"
+
+# Control the maximum width of a line.
+max_width = 80
+
+# Control the number of spaces for indentation.
+tab_spaces = 4
+
+# Control the indentation style.
+# Use spaces for indentation instead of hard tabs.
+hard_tabs = false
