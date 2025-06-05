@@ -20,7 +20,7 @@ pub fn set_raw_mode() -> termios {
         tcgetattr(STDIN_FILENO, &mut terminal);
 
         // Save old terminal attributes in order to restore it later.
-        let old_terminal = terminal.clone();
+        let old_terminal = terminal;
 
         // Disable echo and canonical mode.
         terminal.c_lflag = !(ECHO | ICANON);
@@ -62,5 +62,5 @@ pub mod key {
 /// - `false` - otherwise.
 #[inline(always)]
 pub fn is_ctrl(symbol: i32) -> bool {
-    symbol >= 1 && symbol <= 26
+    (1..=26).contains(&symbol)
 }

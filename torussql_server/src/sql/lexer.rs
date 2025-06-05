@@ -70,7 +70,7 @@ impl Display for Keyword {
             Keyword::Database => "DATABASE",
         };
 
-        f.write_str(&result)
+        f.write_str(result)
     }
 }
 

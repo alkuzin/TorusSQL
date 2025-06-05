@@ -24,7 +24,7 @@ macro_rules! custom {
 #[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {{
-        crate::log::custom!("INFO", $($arg)*)
+        $crate::log::custom!("INFO", $($arg)*)
     }};
 }
 
@@ -33,7 +33,7 @@ macro_rules! info {
 macro_rules! debug {
     ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]
-        crate::log::custom!("DEBUG", $($arg)*)
+        $crate::log::custom!("DEBUG", $($arg)*)
     }};
 }
 
@@ -41,7 +41,7 @@ macro_rules! debug {
 #[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => {{
-        crate::log::custom!("ERROR", $($arg)*)
+        $crate::log::custom!("ERROR", $($arg)*)
     }};
 }
 

@@ -30,10 +30,10 @@ const HISTORY_LIMIT: usize = 64;
 const LINE_SIZE: usize = INPUT_LIMIT + PROMPT.len();
 
 /// Special files directory path.
-const DIRECTORY_PATH: &'static str = ".torussql";
+const DIRECTORY_PATH: &str = ".torussql";
 
 /// User input history file path.
-const HISTORY_PATH: &'static str = ".torussql/history";
+const HISTORY_PATH: &str = ".torussql/history";
 
 /// Struct for handling client CLI.
 pub struct Client {
@@ -130,6 +130,7 @@ impl Client {
             .create(true) // Create the file if it doesn't exist.
             .write(true) // Allow writing to the file.
             .read(true) // Allow reading from the file.
+            .truncate(false) // Do not overwrite an existing file.
             .open(HISTORY_PATH)?;
 
         // Check if the file is empty.
@@ -195,7 +196,7 @@ impl Client {
     /// Handle up arrow key.
     fn handle_up_arrow(&mut self) {
         // Retrieve last command from history.
-        if self.history.len() > 0 {
+        if !self.history.is_empty() {
             if self.history_pos == 0 {
                 // Do not change the position, if already at the top.
             } else {
@@ -276,7 +277,7 @@ impl Client {
             let suggestions = meta::find_closest_commands(&self.input);
 
             match suggestions.len() {
-                0 => return,
+                0 => (),
                 1 => {
                     // Fill input with suggestion.
                     print!("\r{PROMPT}");
@@ -293,7 +294,7 @@ impl Client {
                 }
                 _ => {
                     // Print list of suitable suggestions.
-                    print!("\n");
+                    println!();
 
                     for i in suggestions {
                         print!("{i}\t");
@@ -318,7 +319,7 @@ impl Client {
     /// - `true`  - if client process should be terminated.
     /// - `false` - otherwise.
     fn handle_enter(&mut self) -> bool {
-        print!("\n");
+        println!();
 
         // Remove extra whitespaces.
         self.input = self.input.trim().to_string();
@@ -333,9 +334,9 @@ impl Client {
         }
 
         // Check whether input is meta-command or SQL query.
-        if meta::is_command(&input) {
+        if meta::is_command(input) {
             self.history.push(input.to_string());
-            let to_break = meta::handle_command(&input);
+            let to_break = meta::handle_command(input);
 
             if to_break {
                 return true;
@@ -363,12 +364,12 @@ impl Client {
     /// - `true`  - flag signaling to exit the program.
     /// - `false` - flag signaling to not exit the program.
     fn handle_ctrl(&self, symbol: u8) -> bool {
-        let symbol = (symbol + 'A' as u8 - 1) as char;
+        let symbol = (symbol + b'A' - 1) as char;
 
         match symbol {
             // Exit program.
             'C' => {
-                print!("\n");
+                println!();
                 true
             }
             _ => false,

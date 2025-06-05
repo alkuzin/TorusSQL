@@ -14,7 +14,7 @@ struct MetaCommand {
     /// Command purpose description.
     description: &'static str,
     /// Command function handler.
-    handler: fn(&Vec<&str>) -> bool,
+    handler: fn(&[&str]) -> bool,
 }
 
 /// Array of builtin meta-commands.
@@ -50,7 +50,7 @@ static COMMANDS: [MetaCommand; 4] = [
 /// - `true`  - if input is meta-command.
 /// - `false` - otherwise.
 #[inline(always)]
-pub fn is_command(input: &String) -> bool {
+pub fn is_command(input: &str) -> bool {
     input.starts_with(":")
 }
 
@@ -62,9 +62,9 @@ pub fn is_command(input: &String) -> bool {
 /// # Returns
 /// - `true`  - if client process should be terminated.
 /// - `false` - otherwise.
-pub fn handle_command(input: &String) -> bool {
+pub fn handle_command(input: &str) -> bool {
     // Extract command & remove extra whitespaces.
-    let input: Vec<_> = (&input[1..]).trim().split(" ").collect();
+    let input: Vec<_> = input[1..].trim().split(" ").collect();
     let command_name = input[0];
 
     log::debug!("Handle command: {:?}", input);
@@ -100,7 +100,7 @@ pub fn find_closest_commands(input: &str) -> Vec<String> {
 }
 
 /// Display list of available meta-commands.
-pub fn help(_: &Vec<&str>) -> bool {
+pub fn help(_: &[&str]) -> bool {
     for command in &COMMANDS {
         println!(":{:<10} {}", command.name, command.description);
     }
@@ -113,13 +113,13 @@ pub fn help(_: &Vec<&str>) -> bool {
 /// # Returns
 /// - `true`  - if client process should be terminated.
 /// - `false` - otherwise.
-pub fn exit(_: &Vec<&str>) -> bool {
+pub fn exit(_: &[&str]) -> bool {
     log::debug!("Exiting TorusSQL client");
     true
 }
 
 /// Display TorusSQL version and additional info.
-pub fn version(_: &Vec<&str>) -> bool {
+pub fn version(_: &[&str]) -> bool {
     let version = env!("CARGO_PKG_VERSION");
     let authors = env!("CARGO_PKG_AUTHORS");
 
@@ -128,7 +128,7 @@ pub fn version(_: &Vec<&str>) -> bool {
 }
 
 /// Execute SQL from file specified file.
-pub fn exec(args: &Vec<&str>) -> bool {
+pub fn exec(args: &[&str]) -> bool {
     if args.len() != 2 {
         log::error!("Incorrect number of arguments");
         // TODO: print error for user.
