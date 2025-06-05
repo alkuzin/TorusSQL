@@ -1,25 +1,17 @@
-# TorusSQL - simple relational database management system.
-# Copyright (C) 2025-2026 Alexander (@alkuzin).
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Project name: TorusSQL.
+# Description: Relational database management system.
+# Licence: GPL-3.0.
+# Author: Alexander (@alkuzin).
 
 # Project package info section.
 [package]
-name    = "torussql_sdk"
-version = "0.0.0"
-edition = "2024"
-authors = ["Alexander (GitHub: @alkuzin)"]
+name        = "torussql_sdk"
+description = "Standard development kit (SDK) for TorusSQL RDBMS"
+version     = "0.0.0"
+authors     = ["Alexander (GitHub: @alkuzin)"]
+repository  = "https://github.com/alkuzin/TorusSQL"
+license     = "GPL-3"
+edition     = "2024"
 
 # Settings for the library part of the project.
 [lib]
@@ -28,4 +20,5 @@ crate-type = ["lib"]
 
 # Project dependencies section.
 [dependencies]
+# Date & time management crate.
 chrono = "0.4.41"
