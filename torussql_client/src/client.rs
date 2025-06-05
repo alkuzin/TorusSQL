@@ -5,8 +5,14 @@
 
 //! TorusSQL client related declarations.
 
-use crate::{log, meta, terminal::{key, TAB_SIZE, is_ctrl, reset_terminal, set_raw_mode}};
-use std::{io::{self, stdin, stdout, BufRead, BufReader, Read, Write}, fs::OpenOptions};
+use crate::{
+    log, meta,
+    terminal::{TAB_SIZE, is_ctrl, key, reset_terminal, set_raw_mode},
+};
+use std::{
+    fs::OpenOptions,
+    io::{self, BufRead, BufReader, Read, Write, stdin, stdout},
+};
 
 // TODO: move consts into config module.
 // TODO: add meta-command to change history limit & store all configs in config file.
@@ -47,12 +53,17 @@ impl Client {
     /// # Returns
     /// - New `Client` object.
     pub fn new() -> Self {
-        let buffer      = [0; 1];
-        let input       = String::with_capacity(INPUT_LIMIT);
-        let history     = Vec::with_capacity(HISTORY_LIMIT);
+        let buffer = [0; 1];
+        let input = String::with_capacity(INPUT_LIMIT);
+        let history = Vec::with_capacity(HISTORY_LIMIT);
         let history_pos = 0;
 
-        Self { buffer, input, history, history_pos }
+        Self {
+            buffer,
+            input,
+            history,
+            history_pos,
+        }
     }
 
     /// Read and handle user input.
@@ -73,28 +84,23 @@ impl Client {
 
             if self.buffer[0] == key::ESC {
                 self.handle_arrow_keys();
-            }
-            else if self.buffer[0] == key::BACKSPACE {
-               self.handle_backspace();
-            }
-            else if self.buffer[0] == key::TAB {
+            } else if self.buffer[0] == key::BACKSPACE {
+                self.handle_backspace();
+            } else if self.buffer[0] == key::TAB {
                 self.handle_tab();
-            }
-            else if self.buffer[0] == key::ENTER {
+            } else if self.buffer[0] == key::ENTER {
                 let to_break = self.handle_enter();
 
                 if to_break {
                     break;
                 }
-            }
-            else if is_ctrl(self.buffer[0] as i32) {
+            } else if is_ctrl(self.buffer[0] as i32) {
                 let to_break = self.handle_ctrl(self.buffer[0]);
 
                 if to_break {
                     break;
                 }
-            }
-            else {
+            } else {
                 // Display symbol on the screen & add it to the input buffer.
                 let symbol = self.buffer[0] as char;
                 print!("{symbol}");
@@ -121,9 +127,9 @@ impl Client {
 
         // Create the file if it does not exist.
         let file = OpenOptions::new()
-            .create(true)           // Create the file if it doesn't exist.
-            .write(true)            // Allow writing to the file.
-            .read(true)             // Allow reading from the file.
+            .create(true) // Create the file if it doesn't exist.
+            .write(true) // Allow writing to the file.
+            .read(true) // Allow reading from the file.
             .open(HISTORY_PATH)?;
 
         // Check if the file is empty.
@@ -179,7 +185,7 @@ impl Client {
 
             // TODO: handle left and right arrow keys.
             match self.buffer[0] {
-                key::UP_ARROW   => self.handle_up_arrow(),
+                key::UP_ARROW => self.handle_up_arrow(),
                 key::DOWN_ARROW => self.handle_down_arrow(),
                 _ => {}
             }
@@ -192,8 +198,7 @@ impl Client {
         if self.history.len() > 0 {
             if self.history_pos == 0 {
                 // Do not change the position, if already at the top.
-            }
-            else {
+            } else {
                 // Move up in history.
                 self.history_pos -= 1;
             }
@@ -224,8 +229,7 @@ impl Client {
                 // Do not change the position, if already at the bottom.
                 self.input.clear();
                 self.history_pos = len;
-            }
-            else {
+            } else {
                 // Move down in history.
                 self.history_pos += 1;
             }
@@ -286,7 +290,7 @@ impl Client {
 
                     print!("\r{PROMPT}{}", self.input);
                     stdout().flush().unwrap();
-                },
+                }
                 _ => {
                     // Print list of suitable suggestions.
                     print!("\n");
@@ -297,10 +301,9 @@ impl Client {
 
                     print!("\n{PROMPT}{}", self.input);
                     stdout().flush().unwrap();
-                },
+                }
             }
-        }
-        else {
+        } else {
             // Add tab after input.
             for _ in 0..TAB_SIZE {
                 self.input.push(' ');
@@ -319,7 +322,7 @@ impl Client {
 
         // Remove extra whitespaces.
         self.input = self.input.trim().to_string();
-        let input  = &mut self.input;
+        let input = &mut self.input;
 
         // Skip if input is empty.
         if input.is_empty() {
@@ -337,8 +340,7 @@ impl Client {
             if to_break {
                 return true;
             }
-        }
-        else {
+        } else {
             self.history.push(input.to_string());
             // TODO: check whether it is correct query or not.
         }
@@ -368,7 +370,7 @@ impl Client {
             'C' => {
                 print!("\n");
                 true
-            },
+            }
             _ => false,
         }
     }

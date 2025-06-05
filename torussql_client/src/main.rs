@@ -5,9 +5,9 @@
 
 //! TorusSQL client entry point.
 
-mod terminal;
 mod client;
 mod meta;
+mod terminal;
 
 use torussql_sdk::log;
 

@@ -18,7 +18,7 @@ struct MetaCommand {
 }
 
 /// Array of builtin meta-commands.
-static COMMANDS: [MetaCommand;4] = [
+static COMMANDS: [MetaCommand; 4] = [
     MetaCommand {
         name: "help",
         description: "Display list of available meta-commands",
@@ -92,7 +92,8 @@ pub fn handle_command(input: &String) -> bool {
 pub fn find_closest_commands(input: &str) -> Vec<String> {
     let input = input.trim();
 
-    COMMANDS.iter()
+    COMMANDS
+        .iter()
         .filter(|command| command.name.starts_with(&input[1..]))
         .map(|command| command.name.to_string())
         .collect()

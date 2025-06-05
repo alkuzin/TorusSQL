@@ -5,8 +5,12 @@
 
 //! SQL lexer related declarations.
 
-use std::{fmt::{Display, Formatter}, iter::Peekable, str::Chars};
 use crate::log;
+use std::{
+    fmt::{Display, Formatter},
+    iter::Peekable,
+    str::Chars,
+};
 
 /// SQL token types enumeration.
 #[derive(Debug, PartialEq)]
@@ -42,7 +46,7 @@ impl TryFrom<&str> for Keyword {
         let value = lowercase_value.as_str();
 
         let result = match value {
-            "create"   => Self::Create,
+            "create" => Self::Create,
             "database" => Self::Database,
             _ => return Err("Not a keyword"),
         };
@@ -62,7 +66,7 @@ impl Display for Keyword {
     /// - `Err` - otherwise.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let result = match self {
-            Keyword::Create   => "CREATE",
+            Keyword::Create => "CREATE",
             Keyword::Database => "DATABASE",
         };
 
@@ -85,7 +89,9 @@ impl<'a> Lexer<'a> {
     /// # Returns
     /// - New `Lexer` object.
     pub fn new(input: &'a str) -> Self {
-        Self { input: input.chars().peekable() }
+        Self {
+            input: input.chars().peekable(),
+        }
     }
 
     /// Get next token.
@@ -119,7 +125,9 @@ impl<'a> Lexer<'a> {
 
     /// Skip space characters.
     fn skip_whitespace(&mut self) {
-        while self.input.peek().is_some() && self.input.peek().unwrap().is_whitespace() {
+        while self.input.peek().is_some()
+            && self.input.peek().unwrap().is_whitespace()
+        {
             self.advance()
         }
     }
@@ -143,8 +151,7 @@ impl<'a> Lexer<'a> {
             if c.is_alphabetic() {
                 value.push(c);
                 self.advance()
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -177,7 +184,7 @@ impl<'a> Lexer<'a> {
         if let Some(c) = self.input.peek() {
             let token = match c {
                 ';' => Token::Semicolon,
-                _   => return None,
+                _ => return None,
             };
 
             log::debug!("Found symbol: '{}'", c);
@@ -190,8 +197,8 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::sql::lexer::Keyword::*;
     use super::*;
+    use crate::sql::lexer::Keyword::*;
 
     #[test]
     fn test_next_token() {

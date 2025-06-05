@@ -47,6 +47,6 @@ macro_rules! error {
 
 // Re-export macro rules.
 pub use custom;
-pub use info;
 pub use debug;
 pub use error;
+pub use info;

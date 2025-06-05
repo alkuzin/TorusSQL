@@ -5,7 +5,9 @@
 
 //! TorusSQL terminal related declarations.
 
-use libc::{tcgetattr, tcsetattr, termios, ECHO, ICANON, STDIN_FILENO, TCSANOW};
+use libc::{
+    ECHO, ICANON, STDIN_FILENO, TCSANOW, tcgetattr, tcsetattr, termios,
+};
 
 /// Set raw mode of terminal.
 ///
@@ -41,13 +43,13 @@ pub const TAB_SIZE: usize = 4;
 
 /// Keyboard keys module.
 pub mod key {
-    pub const ESC: u8        = 27;
-    pub const CSI: u8        = 91;
-    pub const UP_ARROW: u8   = 65;
+    pub const ESC: u8 = 27;
+    pub const CSI: u8 = 91;
+    pub const UP_ARROW: u8 = 65;
     pub const DOWN_ARROW: u8 = 66;
-    pub const BACKSPACE: u8  = 127;
-    pub const ENTER: u8      = 13;
-    pub const TAB: u8        = 9;
+    pub const BACKSPACE: u8 = 127;
+    pub const ENTER: u8 = 13;
+    pub const TAB: u8 = 9;
 }
 
 /// Check whether given symbol is CTRL/CTRL+SHIFT.
