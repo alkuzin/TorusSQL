@@ -5,5 +5,6 @@
 
 //! SQL compiler main module.
 
+mod codegen;
 pub mod lexer;
 mod parser;
