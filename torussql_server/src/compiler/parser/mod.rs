@@ -5,7 +5,7 @@
 
 //! SQL parser related declarations.
 
-mod ast;
+pub mod ast;
 
 use crate::compiler::{
     lexer::{
@@ -127,8 +127,10 @@ pub mod tests {
         Parser::new(lexer)
     }
 
+    // TODO: add TorusSQL errors.
+    // TODO: add more tests for CREATE DATABASE statement.
     #[test]
-    fn test_parser() {
+    fn test_create_database() {
         let mut parser = create_parser("CREATE DATABASE \"MyDB\";");
         let statement = parser.parse().unwrap();
 
