@@ -6,8 +6,8 @@
 //! SQL tokens related declarations.
 
 use std::{
+    convert::TryFrom,
     fmt::{Display, Formatter},
-    convert::TryFrom
 };
 
 /// SQL token types enumeration.

@@ -8,11 +8,8 @@
 pub mod token;
 
 use crate::log;
-use std::{
-    iter::Peekable,
-    str::Chars,
-};
-use token::{Token, Keyword};
+use std::{iter::Peekable, str::Chars};
+use token::{Keyword, Token};
 
 /// Struct that converts SQL code into tokens.
 pub struct Lexer<'a> {
