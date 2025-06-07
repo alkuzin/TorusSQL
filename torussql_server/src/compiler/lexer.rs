@@ -111,8 +111,9 @@ impl<'a> Lexer<'a> {
         // Handle characters.
         if let Some(c) = self.input.peek() {
             let token = match c {
-                c if c.is_alphabetic() => self.get_keyword_or_ident(),
-                _ => self.get_symbol(),
+                c if c.is_alphabetic() => self.consume_keyword_or_ident(),
+                '"' => self.consume_string(),
+                _ => self.consume_symbol(),
             };
 
             self.advance();
@@ -138,12 +139,12 @@ impl<'a> Lexer<'a> {
         self.input.next();
     }
 
-    /// Get keyword or ident token.
+    /// Consume keyword or ident token.
     ///
     /// # Returns
     ///  - `SQL token` - in case of success.
     ///  - `None`      - otherwise.
-    fn get_keyword_or_ident(&mut self) -> Option<Token> {
+    fn consume_keyword_or_ident(&mut self) -> Option<Token> {
         let mut value = String::new();
 
         // Extract keyword/ident from input.
@@ -179,8 +180,41 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    /// Get special symbol.
-    fn get_symbol(&mut self) -> Option<Token> {
+    /// Consume string literal.
+    ///
+    /// # Returns
+    ///  - `SQL token` - in case of success.
+    ///  - `None`      - otherwise.
+    fn consume_string(&mut self) -> Option<Token> {
+        // Skip '"' symbol.
+        self.advance();
+        let mut value = String::new();
+
+        while let Some(c) = self.input.peek() {
+            if *c == '"' {
+                // Consume the closing quote.
+                self.advance();
+                break;
+            }
+
+            value.push(*c);
+            self.advance();
+        }
+
+        if !value.is_empty() {
+            log::debug!("Found literal string: \"{value}\"");
+            return Some(Token::String(value));
+        }
+
+        None
+    }
+
+    /// Consume special symbol.
+    ///
+    /// # Returns
+    ///  - `SQL token` - in case of success.
+    ///  - `None`      - otherwise.
+    fn consume_symbol(&mut self) -> Option<Token> {
         if let Some(c) = self.input.peek() {
             let token = match c {
                 ';' => Token::Semicolon,
@@ -198,11 +232,11 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::sql::lexer::Keyword::*;
+    use crate::compiler::lexer::Keyword::*;
 
     #[test]
     fn test_next_token() {
-        let input = "     CREATE     DATABASE    MyDB      ;     ";
+        let input = "     CREATE     DATABASE    \"MyDB\"      ;     ";
         let mut lexer = Lexer::new(input);
 
         let token = lexer.next_token();
@@ -227,7 +261,7 @@ pub mod tests {
 
     #[test]
     fn test_next_token_different_case() {
-        let input = "     CreAtE     DATAbase    MyDB      ;     ";
+        let input = "     CreAtE     DATAbase    \"  MyDB  \"      ;     ";
         let mut lexer = Lexer::new(input);
 
         let token = lexer.next_token();
@@ -237,7 +271,7 @@ pub mod tests {
         assert_eq!(token, Some(Token::Keyword(Database)));
 
         let token = lexer.next_token();
-        assert_eq!(token, Some(Token::String("MyDB".to_string())));
+        assert_eq!(token, Some(Token::String("  MyDB  ".to_string())));
 
         let token = lexer.next_token();
         assert_eq!(token, Some(Token::Semicolon));

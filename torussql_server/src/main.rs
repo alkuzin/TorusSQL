@@ -5,7 +5,7 @@
 
 //! TorusSQL server entry point.
 
-pub mod sql;
+pub mod compiler;
 
 use torussql_sdk::log;
 

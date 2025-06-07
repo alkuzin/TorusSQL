@@ -3,6 +3,7 @@
 // Licence: GPL-3.0.
 // Author: Alexander (@alkuzin).
 
-//! SQL execution engine main module.
+//! SQL compiler main module.
 
 pub mod lexer;
+mod parser;
